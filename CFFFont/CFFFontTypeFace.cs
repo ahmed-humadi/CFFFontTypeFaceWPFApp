@@ -86,7 +86,7 @@ namespace CFFFont
         }
         private Dictionary<string, double> _topDictCFF = new Dictionary<string, double>();
         private Dictionary<ushort, byte[]> _glyphsOutlineDic = new Dictionary<ushort, byte[]>();
-        private Stack<double> _charstringStackCFF = new Stack<double>();
+        private Stack<double> _charStringStackCFF = new Stack<double>();
         private void DecodeTopDic(byte b0, ref int j)
         {
             #region operands
@@ -94,21 +94,21 @@ namespace CFFFont
             if (b0 >= 32 && b0 <= 246) // [-107,107]
             {
                 integer = b0 - 139;
-                this._charstringStackCFF.Push(integer);
+                this._charStringStackCFF.Push(integer);
             }
             else if (b0 >= 247 && b0 <= 250) // [108,1131]
             {
                 byte byte1 = (byte)this._cFFReader.ReadCard8();
                 ++j;
                 integer = ((b0 - 247) * 256) + byte1 + 108;
-                this._charstringStackCFF.Push(integer);
+                this._charStringStackCFF.Push(integer);
             }
             else if (b0 >= 251 && b0 <= 254) // [-1131,-108]
             {
                 byte byte1 = (byte)this._cFFReader.ReadCard8();
                 ++j;
                 integer = -((b0 - 251) * 256) - byte1 - 108;
-                this._charstringStackCFF.Push(integer);
+                this._charStringStackCFF.Push(integer);
             }
             else if (b0 == 28) // [-32768, +32767]
             {
@@ -116,7 +116,7 @@ namespace CFFFont
                 byte byte2 = (byte)this._cFFReader.ReadCard8();
                 j += 2;
                 integer = byte1 << 8 | byte2;
-                this._charstringStackCFF.Push(integer);
+                this._charStringStackCFF.Push(integer);
             }
             else if (b0 == 29) // any 32-bit signed integer
             {
@@ -126,7 +126,7 @@ namespace CFFFont
                 byte b4 = (byte)this._cFFReader.ReadCard8();
                 j += 4;
                 integer = b1 << 24 | b2 << 16 | b3 << 8 | b4;
-                this._charstringStackCFF.Push(integer);
+                this._charStringStackCFF.Push(integer);
             }
             else if (b0 == 30) // nibbles
             {
@@ -147,154 +147,210 @@ namespace CFFFont
                         str.Append(nD1);
                     }
                 }
-                this._charstringStackCFF.Push(double.Parse(str.ToString()));
+                #region Nibbles Definitions
+                string NibbleDefinitions(byte nibble)
+                {
+                    if (nibble >= 0 && nibble <= 9)
+                    {
+                        return Convert.ToString(nibble);
+                    }
+                    else if (nibble == 0xa)
+                    {
+                        return ".";
+                    }
+                    else if (nibble == 0xb)
+                    {
+                        return "E";
+                    }
+                    else if (nibble == 0xc)
+                    {
+                        return "E-";
+                    }
+                    else if (nibble == 0xd)
+                    {
+                        return "reserved";
+                    }
+                    else if (nibble == 0xe)
+                    {
+                        return "-";
+                    }
+                    else if (nibble == 0xf)
+                    {
+                        return "eon";
+                    }
+                    else
+                        throw new ArgumentOutOfRangeException();
+                }
+                #endregion
+                this._charStringStackCFF.Push(double.Parse(str.ToString()));
             }
             #endregion
             #region operators
             else
             {
+                // operator : version, operand : SID
                 if (b0 == 0)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : notice, operand : SID
                 else if (b0 == 1)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : fullname, operand : SID
                 else if (b0 == 2)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : familyname, operand : SID
                 else if (b0 == 3)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : weight, operand : SID
                 else if (b0 == 4)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : fontBBox, operand : array
                 else if (b0 == 5)
                 {
-                    while (this._charstringStackCFF.Count != 0)
-                        this._charstringStackCFF.Pop();
+                    while (this._charStringStackCFF.Count != 0)
+                        this._charStringStackCFF.Pop();
                 }
+                // operator : uniqueID, operand : number
                 else if (b0 == 13)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : xUID, operand : array
                 else if (b0 == 14)
                 {
-                    while (this._charstringStackCFF.Count != 0)
-                        this._charstringStackCFF.Pop();
+                    while (this._charStringStackCFF.Count != 0)
+                        this._charStringStackCFF.Pop();
                 }
+                // operator : charset, operand : number
                 else if (b0 == 15)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : encoding, operand : number
                 else if (b0 == 16)
                 {
-                    this._charstringStackCFF.Pop();
+                    this._charStringStackCFF.Pop();
                 }
+                // operator : charStrings, operand : number
                 else if (b0 == 17)
                 {
-                    this._topDictCFF.Add("CharStrings", this._charstringStackCFF.Pop());
+                    var offset = this._charStringStackCFF.Pop();
+                    this._topDictCFF.Add("CharStrings", offset);
                 }
+                // operator : private, operand : number, number
                 else if (b0 == 18)
                 {
-                    this._charstringStackCFF.Pop();
-                    this._charstringStackCFF.Pop();
+                    var offset = this._charStringStackCFF.Pop();
+                    var privateDicSize = this._charStringStackCFF.Pop();
+                    this._topDictCFF.Add("PrivateDic", offset);
                 }
-                if (b0 == 12)
+                #region multibytes
+                else if (b0 == 12)
                 {
                     // read next byte
                     byte byte1 = (byte)this._cFFReader.ReadCard8();
                     ++j;
-                    if (byte1 == 1)
+                    // operator : copyRights, operand : SID
+                    if (byte1 == 0)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 2)
+                    // operator : isfixedPitch, operand : boolean
+                    else if (byte1 == 1)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 3)
+                    // operator : italicAngle, operand : number
+                    else if (byte1 == 2)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 4)
+                    // operator : underlinePosition, operand : number
+                    else if (byte1 == 3)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 5)
+                    // operator : underlineThickness, operand : number
+                    else if (byte1 == 4)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 6)
+                    // operator : paintType, operand : number
+                    else if (byte1 == 5)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 7)
+                    // operator : charstringType, operand : number
+                    else if (byte1 == 6)
                     {
-                        while (this._charstringStackCFF.Count != 0)
-                            this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 8)
+                    // operator : fontMatrix, operand : array
+                    else if (byte1 == 7)
                     {
-                        this._charstringStackCFF.Pop();
+                        while (this._charStringStackCFF.Count != 0)
+                            this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 20)
+                    // operator : strokeWidth, operand : number
+                    else if (byte1 == 8)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 21)
+                    // operator : syntheticBase, operand : number
+                    else if (byte1 == 20)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 22)
+                    // operator : postScript, operand : SID
+                    else if (byte1 == 21)
                     {
-                        this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
                     }
-                    if (byte1 == 23)
+                    // operator : baseFontName, operand : SID
+                    else if (byte1 == 22)
                     {
-                        while (this._charstringStackCFF.Count != 0)
-                            this._charstringStackCFF.Pop();
+                        this._charStringStackCFF.Pop();
+                    }
+                    // operator : baseFontBlend, operand : delt
+                    else if (byte1 == 23)
+                    {
+                        while (this._charStringStackCFF.Count != 0)
+                            this._charStringStackCFF.Pop();
                     }
                 }
+                #endregion
             }
             #endregion
         }
-        private string NibbleDefinitions(byte nibble)
+        private byte[] GetGlyphDescription(ushort gID)
         {
-            if (nibble >= 0 && nibble <= 9)
+            long charStringsOffset = (long)this._topDictCFF["CharStrings"];
+
+            this._cFFReader.Seek(charStringsOffset);
+            Card16 count3 = this._cFFReader.ReadCard16();
+            OffSize offSize3 = this._cFFReader.ReadOffSize();
+            long glypfOffset = (gID * offSize3) + charStringsOffset;
+            long nextGlypfOffset = ((gID + 1) * offSize3) + charStringsOffset;
+            this._cFFReader.Seek(glypfOffset + charStringsOffset);
+
+            byte[] dataArray = null;
+            ushort length = (ushort)(nextGlypfOffset - glypfOffset);
+            dataArray = new byte[length];
+            for (int j = 0; j < length; j++)
             {
-                return Convert.ToString(nibble);
+                Card8 data = this._cFFReader.ReadCard8();
+                dataArray[j] = (byte)data;
             }
-            else if (nibble == 0xa)
-            {
-                return ".";
-            }
-            else if (nibble == 0xb)
-            {
-                return "E";
-            }
-            else if (nibble == 0xc)
-            {
-                return "E-";
-            }
-            else if (nibble == 0xd)
-            {
-                return "reserved";
-            }
-            else if (nibble == 0xe)
-            {
-                return "-";
-            }
-            else if (nibble == 0xf)
-            {
-                return "eon";
-            }
-            else
-                throw new ArgumentOutOfRangeException();
+            return dataArray;
         }
     }
 }

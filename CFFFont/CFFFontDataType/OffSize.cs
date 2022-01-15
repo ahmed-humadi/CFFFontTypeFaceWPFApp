@@ -9,6 +9,14 @@
         {
             return new OffSize((byte)i);
         }
+        public static int operator *(ushort value, OffSize offSize)
+        {
+            return (value * offSize.value);
+        }
+        public static int operator *(int value, OffSize offSize)
+        {
+            return (value * offSize.value);
+        }
         public override string ToString()
         {
             return value.ToString();
