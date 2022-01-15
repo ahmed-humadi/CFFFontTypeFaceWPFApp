@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using CFFFont.IO;
 using CFFFont.CFFDataType;
+using System.Windows.Media;
+
 namespace CFFFont
 {
     public class CFFFontTypeFace
@@ -351,6 +353,10 @@ namespace CFFFont
                 dataArray[j] = (byte)data;
             }
             return dataArray;
+        }
+        public Geometry GetGlyphOutLine()
+        {
+
         }
     }
 }
