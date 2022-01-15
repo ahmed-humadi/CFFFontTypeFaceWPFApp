@@ -85,7 +85,7 @@ namespace CFFFont
             //GetGlyphOutLineCFF2(2);
         }
         private Dictionary<string, double> _topDictCFF = new Dictionary<string, double>();
-        private Dictionary<ushort, byte[]> _charStringCFF = new Dictionary<ushort, byte[]>();
+        private Dictionary<ushort, byte[]> _glyphsOutlineDic = new Dictionary<ushort, byte[]>();
         private Stack<double> _charstringStackCFF = new Stack<double>();
         private void DecodeTopDic(byte b0, ref int j)
         {
