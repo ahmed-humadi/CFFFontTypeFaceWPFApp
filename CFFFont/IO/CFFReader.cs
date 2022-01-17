@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using CFFFont.CFFDataType;
 namespace CFFFont.IO
 {
-    public class CFFReader
+    public class CFFReader : IDisposable
     {
         private BinaryReader _binaryReader;     
         public CFFReader(byte[] data)
@@ -66,6 +66,12 @@ namespace CFFFont.IO
             Offset32 number = (Offset32)0;
 
             return buffer.Length < 4 ? number : (Offset32)BitConverter.ToUInt32(buffer);
+        }
+
+        public void Dispose()
+        {
+            if (this._binaryReader is not null)
+                this._binaryReader.Dispose();
         }
     }
 }

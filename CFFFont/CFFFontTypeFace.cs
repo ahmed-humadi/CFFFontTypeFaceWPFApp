@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace CFFFont
 {
-    public class CFFFontTypeFace
+    public class CFFFontTypeFace : IDisposable
     {
         private CFFReader _cFFReader;
         public CFFFontTypeFace(byte[] fontData) 
@@ -87,7 +87,8 @@ namespace CFFFont
             //}
             //GetGlyphOutLineCFF2(2);
         }
-        private Dictionary<string, double> _topDictCFF = new Dictionary<string, double>();
+        private Dictionary<string, double> _topDicCFF = new Dictionary<string, double>();
+        private Dictionary<string, double> _privateDicCFF = new Dictionary<string, double>();
         private Dictionary<ushort, byte[]> _glyphsOutlineDic = new Dictionary<ushort, byte[]>();
         private Stack<double> _charStringStackCFF = new Stack<double>();
         private void DecodeTopDic(byte b0, ref int j)
@@ -247,14 +248,14 @@ namespace CFFFont
                 else if (b0 == 17)
                 {
                     var offset = this._charStringStackCFF.Pop();
-                    this._topDictCFF.Add("CharStrings", offset);
+                    this._topDicCFF.Add("CharStrings", offset);
                 }
                 // operator : private, operand : number, number
                 else if (b0 == 18)
                 {
                     var offset = this._charStringStackCFF.Pop();
                     var privateDicSize = this._charStringStackCFF.Pop();
-                    this._topDictCFF.Add("PrivateDic", offset);
+                    this._topDicCFF.Add("PrivateDic", offset);
                 }
                 #region multibytes
                 else if (b0 == 12)
@@ -336,14 +337,13 @@ namespace CFFFont
         }
         private byte[] GetGlyphDescription(ushort gID)
         {
-            long charStringsOffset = (long)this._topDictCFF["CharStrings"];
-
+            long charStringsOffset = (long)this._topDicCFF["CharStrings"];
             this._cFFReader.Seek(charStringsOffset);
             Card16 count3 = this._cFFReader.ReadCard16();
             OffSize offSize3 = this._cFFReader.ReadOffSize();
             long glypfOffset = (gID * offSize3) + charStringsOffset;
             long nextGlypfOffset = ((gID + 1) * offSize3) + charStringsOffset;
-            this._cFFReader.Seek(glypfOffset + charStringsOffset);
+            this._cFFReader.Seek(glypfOffset);
 
             byte[] dataArray = null;
             ushort length = (ushort)(nextGlypfOffset - glypfOffset);
@@ -837,6 +837,24 @@ namespace CFFFont
             BezierSegment segment = new BezierSegment()
             { Point1 = controlPoint1, Point2 = controlPoint2, Point3 = endPoint };
             return segment;
+        }
+
+        public void Dispose()
+        {
+            if (this._cFFReader is not null)
+                this._cFFReader.Dispose();
+            if (this._topDicCFF is not null)
+            { this._topDicCFF.Clear(); this._topDicCFF = null; }
+            if (this._privateDicCFF is not null)
+            { this._privateDicCFF.Clear(); this._privateDicCFF = null; }
+            if (this._glyphsOutlineDic is not null)
+            { this._glyphsOutlineDic.Clear(); this._glyphsOutlineDic = null; }
+            if (this._charStringStackCFF is not null)
+            { this._charStringStackCFF.Clear(); this._charStringStackCFF = null; }
+            if (this._pathGeometry is not null)
+            { this._pathGeometry.Clear(); this._pathGeometry = null; }
+            if (this._pathFigure is not null)
+            {this._pathFigure = null; }
         }
     }
 }

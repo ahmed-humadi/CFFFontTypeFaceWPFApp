@@ -12,7 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+using CFFFont;
+using CFFFont.CustomFontViewer;
+using System.IO;
 namespace CFFFontTypeFaceWPF
 {
     /// <summary>
@@ -23,6 +25,26 @@ namespace CFFFontTypeFaceWPF
         public MainWindow()
         {
             InitializeComponent();
+            DrawGlyph();
+        }
+        private void DrawGlyph()
+        {
+            using(FileStream stream = new FileStream(@"F:\EGEDFC+MyriadMM_565_600_.cff", FileMode.Open))
+            {
+                byte[] fontData = new byte[stream.Length];
+                stream.Read(fontData);
+                using(CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
+                {
+                    Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(3);
+
+                    glyph.Transform = new ScaleTransform(20.0 / 1000.0, 20.0 / 1000.0);
+
+                    using (DrawingContext dc = CustPanel.RenderOpen())
+                    {
+                        dc.DrawGeometry(Brushes.Black, null, glyph);
+                    }
+                }
+            }
         }
     }
 }
