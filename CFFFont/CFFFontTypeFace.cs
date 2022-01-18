@@ -65,26 +65,26 @@ namespace CFFFont
                 }
             }
             // CharStrings
-            //this._cFFReader.Seek((long)this._topDictCFF["CharStrings"]);
-            //Card16 count3 = this._cFFReader.ReadCard16();
-            //OffSize offSize3 = this._cFFReader.ReadOffSize();
-            //Offset16[] offSetsArray3 = new Offset16[count3 + 1];
-            //for (int i = 0; i < offSetsArray3.Length; i++)
-            //{
-            //    Offset16 offset = this._cFFReader.ReadOffset16();
-            //    offSetsArray3[i] = offset;
-            //}
-            //for (ushort i = 0; i < offSetsArray3.Length - 1; i++)
-            //{
-            //    ushort length = offSetsArray3[i + 1] - offSetsArray3[i];
-            //    byte[] dataArray = new byte[length];
-            //    for (int j = 0; j < length; j++)
-            //    {
-            //        Card8 data = this._cFFReader.ReadCard8();
-            //        dataArray[j] = (byte)data;
-            //    }
-            //    this._charStringCFF.Add(i, dataArray);
-            //}
+            this._cFFReader.Seek((long)this._topDicCFF["CharStrings"]);
+            Card16 count3 = this._cFFReader.ReadCard16();
+            OffSize offSize3 = this._cFFReader.ReadOffSize();
+            Offset16[] offSetsArray3 = new Offset16[count3 + 1];
+            for (int i = 0; i < offSetsArray3.Length; i++)
+            {
+                Offset16 offset = this._cFFReader.ReadOffset16();
+                offSetsArray3[i] = offset;
+            }
+            for (ushort i = 0; i < offSetsArray3.Length - 1; i++)
+            {
+                ushort length = offSetsArray3[i + 1] - offSetsArray3[i];
+                byte[] dataArray = new byte[length];
+                for (int j = 0; j < length; j++)
+                {
+                    Card8 data = this._cFFReader.ReadCard8();
+                    dataArray[j] = (byte)data;
+                }
+                this._glyphsOutlineDic.Add(i, dataArray);
+            }
             //GetGlyphOutLineCFF2(2);
         }
         private Dictionary<string, double> _topDicCFF = new Dictionary<string, double>();
@@ -337,23 +337,29 @@ namespace CFFFont
         }
         private byte[] GetGlyphDescription(ushort gID)
         {
-            long charStringsOffset = (long)this._topDicCFF["CharStrings"];
-            this._cFFReader.Seek(charStringsOffset);
-            Card16 count3 = this._cFFReader.ReadCard16();
-            OffSize offSize3 = this._cFFReader.ReadOffSize();
-            long glypfOffset = (gID * offSize3) + charStringsOffset;
-            long nextGlypfOffset = ((gID + 1) * offSize3) + charStringsOffset;
-            this._cFFReader.Seek(glypfOffset);
-
-            byte[] dataArray = null;
-            ushort length = (ushort)(nextGlypfOffset - glypfOffset);
-            dataArray = new byte[length];
-            for (int j = 0; j < length; j++)
-            {
-                Card8 data = this._cFFReader.ReadCard8();
-                dataArray[j] = (byte)data;
-            }
-            return dataArray;
+            //long charStringsOffset = (long)this._topDicCFF["CharStrings"];
+            //this._cFFReader.Seek(charStringsOffset);
+            //// header 
+            //Card16 count3 = this._cFFReader.ReadCard16();
+            //OffSize offSize3 = this._cFFReader.ReadOffSize();
+            //// selected glyf position offset
+            //long glypfOffset = gID + charStringsOffset;
+            //this._cFFReader.Seek(glypfOffset);
+            //Offset16 offset0 = this._cFFReader.ReadOffset16();
+            //// preceeding glyf offset
+            //long nextGlypfOffset = gID + 1 + charStringsOffset;
+            //this._cFFReader.Seek(nextGlypfOffset);
+            //Offset16 offset1 = this._cFFReader.ReadOffset16();
+            //// fill glyf array
+            //byte[] dataArray = null;
+            //ushort length = (ushort)(offset1 - offset0);
+            //dataArray = new byte[length];
+            //for (int j = 0; j < length; j++)    
+            //{
+            //    Card8 data = this._cFFReader.ReadCard8();
+            //    dataArray[j] = (byte)data;
+            //}
+            return _glyphsOutlineDic[gID];
         }
         public Geometry GetGlyphOutLine(ushort gID)
         {
@@ -373,19 +379,19 @@ namespace CFFFont
                     integer = charStringBtye - 139;
                     this._charStringStackCFF.Push(integer);
                 }
-                if (charStringBtye >= 247 && charStringBtye <= 250) // [108,1131]
+                else if (charStringBtye >= 247 && charStringBtye <= 250) // [108,1131]
                 {
                     byte w = data[++i];
                     integer = ((charStringBtye - 247) * 256) + w + 108;
                     this._charStringStackCFF.Push(integer);
                 }
-                if (charStringBtye >= 251 && charStringBtye <= 254) // [-1131,-108]
+                else if (charStringBtye >= 251 && charStringBtye <= 254) // [-1131,-108]
                 {
                     byte w = data[++i];
                     integer = -((charStringBtye - 251) * 256) - w - 108;
                     this._charStringStackCFF.Push(integer);
                 }
-                if (charStringBtye == 255) // any 32-bit signed integer
+                else if (charStringBtye == 255) // any 32-bit signed integer
                 {
                     byte b1 = data[++i];
                     byte b2 = data[++i];
@@ -396,7 +402,7 @@ namespace CFFFont
                 }
                 #endregion
                 #region path construction operators
-                if (charStringBtye == 4)
+                else if (charStringBtye == 4)
                 {
                     // vmoveto command
                     double dy = this._charStringStackCFF.Pop();
@@ -474,19 +480,22 @@ namespace CFFFont
                 {
                     // rrcurveto command
                     int count = this._charStringStackCFF.Count;
-                    for (int n = 0; n < count; n += 6)
+                    int n = count - 1;
+                    while(n > 0)
                     {
-                        double dy3 = this._charStringStackCFF.Pop();
-                        double dx3 = this._charStringStackCFF.Pop();
-                        double dy2 = this._charStringStackCFF.Pop();
-                        double dx2 = this._charStringStackCFF.Pop();
-                        double dy1 = this._charStringStackCFF.Pop();
-                        double dx1 = this._charStringStackCFF.Pop();
+                        double dxa = this._charStringStackCFF.ElementAt(n--);
+                        double dya = this._charStringStackCFF.ElementAt(n--);
+                        double dxb = this._charStringStackCFF.ElementAt(n--);
+                        double dyb = this._charStringStackCFF.ElementAt(n--);
+                        double dxc = this._charStringStackCFF.ElementAt(n--);
+                        double dyc = this._charStringStackCFF.ElementAt(n--);
+
                         // Bezier
-                        BezierSegment bezier = this.rrcurveto(dx1, dy1, dx2, dy2,
-                            dx3, dy3, _currentPoint);
+                        BezierSegment bezier = this.rrcurveto(dxa, dya, dxb, dyb,
+                            dxc, dyc, _currentPoint);
                         _currentPoint = bezier.Point3;
                         _pathFigure.Segments.Add(bezier);
+                        this._charStringStackCFF.Clear();
                     }
 
                 }
@@ -515,22 +524,23 @@ namespace CFFFont
                 {
                     // rcurveline command
                     int count = this._charStringStackCFF.Count;
-                    for (int n = 0; n < count - 2;)
+                    int n = count - 1;
+                    while (n > 1)
                     {
-                        double dxa = this._charStringStackCFF.ElementAt(n++);
-                        double dya = this._charStringStackCFF.ElementAt(n++);
-                        double dxb = this._charStringStackCFF.ElementAt(n++);
-                        double dyb = this._charStringStackCFF.ElementAt(n++);
-                        double dxc = this._charStringStackCFF.ElementAt(n++);
-                        double dyc = this._charStringStackCFF.ElementAt(n++);
+                        double dxa = this._charStringStackCFF.ElementAt(n--);
+                        double dya = this._charStringStackCFF.ElementAt(n--);
+                        double dxb = this._charStringStackCFF.ElementAt(n--);
+                        double dyb = this._charStringStackCFF.ElementAt(n--);
+                        double dxc = this._charStringStackCFF.ElementAt(n--);
+                        double dyc = this._charStringStackCFF.ElementAt(n--);
                         // Bezier
                         BezierSegment bezier = this.rrcurveto(dxa, dya, dxb, dyb,
                             dxc, dyc, _currentPoint);
                         _currentPoint = bezier.Point3;
                         _pathFigure.Segments.Add(bezier);
                     }
-                    double dx = this._charStringStackCFF.ElementAt(count - 2);
-                    double dy = this._charStringStackCFF.ElementAt(count - 1);
+                    double dx = this._charStringStackCFF.ElementAt(n--);
+                    double dy = this._charStringStackCFF.ElementAt(n);
                     // Line
                     LineSegment line = this.rlineto(dx, dy, _currentPoint);
                     this._currentPoint = line.Point;
@@ -654,7 +664,7 @@ namespace CFFFont
                 }
                 #endregion
                 #region hint operators
-                if (charStringBtye == 1)
+                else if (charStringBtye == 1)
                 {
                     // hstem command
                     this._charStringStackCFF.Clear();
@@ -685,13 +695,13 @@ namespace CFFFont
                     this._charStringStackCFF.Clear();
                 }
                 #endregion
-                if (charStringBtye == 9)
+                else if (charStringBtye == 9)
                 {
                     // closepath command
                     _pathFigure.IsClosed = true;
                 }
                 #region callsubr
-                if (charStringBtye == 10)
+                else if (charStringBtye == 10)
                 {
                     // callsubr command
                     double no, index = 0;
@@ -722,14 +732,14 @@ namespace CFFFont
                 }
                 #endregion
                 #region close path
-                if (charStringBtye == 14)
+                else if (charStringBtye == 14)
                 {
                     // endchar command
                     this._charStringStackCFF.Clear();
                     return _pathGeometry;
                 }
                 #endregion
-                if (charStringBtye == 12)
+                else if (charStringBtye == 12)
                 {
                     // read next byte
                     byte next = data[++i];
@@ -737,7 +747,7 @@ namespace CFFFont
                     {
                         // dotsection command
                     }
-                    if (next == 1)
+                    else if (next == 1)
                     {
                         // vstem3 command
                         this._charStringStackCFF.Pop();
@@ -747,7 +757,7 @@ namespace CFFFont
                         this._charStringStackCFF.Pop();
                         this._charStringStackCFF.Pop();
                     }
-                    if (next == 2)
+                    else if (next == 2)
                     {
                         // hstem3 command
                         this._charStringStackCFF.Pop();
@@ -757,7 +767,7 @@ namespace CFFFont
                         this._charStringStackCFF.Pop();
                         this._charStringStackCFF.Pop();
                     }
-                    if (next == 6)
+                    else if (next == 6)
                     {
                         // seac command
                         this._charStringStackCFF.Pop();
@@ -767,7 +777,7 @@ namespace CFFFont
                         this._charStringStackCFF.Pop();
                         this._charStringStackCFF.Pop();
                     }
-                    if (next == 7)
+                    else if (next == 7)
                     {
                         // sbw command
                         this._charStringStackCFF.Pop();
@@ -775,7 +785,7 @@ namespace CFFFont
                         this._charStringStackCFF.Pop();
                         this._charStringStackCFF.Pop();
                     }
-                    if (next == 12)
+                    else if (next == 12)
                     {
                         // div command
                         double y = this._charStringStackCFF.Pop();
@@ -783,15 +793,15 @@ namespace CFFFont
                         // push x / y
                         this._charStringStackCFF.Push((x / y));
                     }
-                    if (next == 16)
+                    else if (next == 16)
                     {
                         // callothersubr command
                     }
-                    if (next == 17)
+                    else if (next == 17)
                     {
                         // pop command
                     }
-                    if (next == 33)
+                    else if (next == 33)
                     {
                         // setcurrentpoint command
                         this._charStringStackCFF.Pop();
@@ -838,7 +848,6 @@ namespace CFFFont
             { Point1 = controlPoint1, Point2 = controlPoint2, Point3 = endPoint };
             return segment;
         }
-
         public void Dispose()
         {
             if (this._cFFReader is not null)
@@ -851,8 +860,8 @@ namespace CFFFont
             { this._glyphsOutlineDic.Clear(); this._glyphsOutlineDic = null; }
             if (this._charStringStackCFF is not null)
             { this._charStringStackCFF.Clear(); this._charStringStackCFF = null; }
-            if (this._pathGeometry is not null)
-            { this._pathGeometry.Clear(); this._pathGeometry = null; }
+            //if (this._pathGeometry is not null)
+            //{ this._pathGeometry.Clear(); this._pathGeometry = null; }
             if (this._pathFigure is not null)
             {this._pathFigure = null; }
         }

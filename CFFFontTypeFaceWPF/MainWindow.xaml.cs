@@ -25,6 +25,7 @@ namespace CFFFontTypeFaceWPF
         public MainWindow()
         {
             InitializeComponent();
+            CustPanel.LayoutTransform = new ScaleTransform(1, -1);
             DrawGlyph();
         }
         private void DrawGlyph()
@@ -33,15 +34,16 @@ namespace CFFFontTypeFaceWPF
             {
                 byte[] fontData = new byte[stream.Length];
                 stream.Read(fontData);
-                using(CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
+                using (CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
+
                 {
-                    Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(3);
+                    Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(2);
 
-                    glyph.Transform = new ScaleTransform(20.0 / 1000.0, 20.0 / 1000.0);
-
+                    glyph.Transform = new ScaleTransform(40.0 / 1000.0, 40.0 / 1000.0);
+                    //glyph.Transform = new TranslateTransform(50, 50);
                     using (DrawingContext dc = CustPanel.RenderOpen())
                     {
-                        dc.DrawGeometry(Brushes.Black, null, glyph);
+                        dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 2), glyph);
                     }
                 }
             }
