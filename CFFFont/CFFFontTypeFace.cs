@@ -415,10 +415,11 @@ namespace CFFFont
                 else if (charStringBtye == 5)
                 {
                     // rlineto command
-                    for (int n = 0; n < this._charStringStackCFF.Count;)
+                    int count = this._charStringStackCFF.Count;
+                    while (count > 0)
                     {
-                        double dx = this._charStringStackCFF.ElementAt(n);
-                        double dy = this._charStringStackCFF.ElementAt(++n);
+                        double dx = this._charStringStackCFF.ElementAt(--count);
+                        double dy = this._charStringStackCFF.ElementAt(--count);
                         // Line
                         LineSegment line = this.rlineto(dx, dy, _currentPoint);
                         this._currentPoint = line.Point;
@@ -430,23 +431,49 @@ namespace CFFFont
                 {
                     // hlineto command
                     int count = this._charStringStackCFF.Count;
-                    for (int n = 0; n < count; n++)
+                    if (count % 2 != 0) // odd 
                     {
-                        if (n % 2 == 0) // even number
+                        while (count > 0)
                         {
-                            double dx = this._charStringStackCFF.ElementAt(n);
-                            // Line
-                            LineSegment line = this.rlineto(dx, 0, _currentPoint);
-                            this._currentPoint = line.Point;
-                            this._pathFigure.Segments.Add(line);
+                            if (count % 2 == 0) // even number
+                            {
+                                double dya = this._charStringStackCFF.ElementAt(--count);
+                                //double dxb = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(0, dya, _currentPoint);
+                                this._currentPoint = line.Point;
+                                this._pathFigure.Segments.Add(line);
+                            }
+                            else // odd number
+                            {
+                                double dx1 = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(dx1, 0, _currentPoint);
+                                this._currentPoint = line.Point;
+                                this._pathFigure.Segments.Add(line);
+                            }
                         }
-                        else // odd number
+                    }
+                    else
+                    {
+                        while(count > 0)
                         {
-                            double dy = this._charStringStackCFF.ElementAt(n);
-                            // Line
-                            LineSegment line = this.rlineto(0, dy, _currentPoint);
-                            this._currentPoint = line.Point;
-                            this._pathFigure.Segments.Add(line);
+                            if(count % 2 == 0)
+                            {
+                                double dxa = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(dxa, 0, _currentPoint);
+                                this._currentPoint = line.Point;
+                                this._pathFigure.Segments.Add(line);
+                            }
+                            else
+                            {
+                                double dyb = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(0, dyb, _currentPoint);
+                                this._currentPoint = line.Point;
+                                this._pathFigure.Segments.Add(line);
+                            }
                         }
                     }
                     this._charStringStackCFF.Clear();
@@ -455,23 +482,49 @@ namespace CFFFont
                 {
                     // vlineto command
                     int count = this._charStringStackCFF.Count;
-                    for (int n = 0; n < count; n++)
+                    if (count % 2 != 0) // odd
                     {
-                        if (n % 2 == 0) // even number
+                        while (count > 0)
                         {
-                            double dy = this._charStringStackCFF.ElementAt(n);
-                            // Line
-                            LineSegment line = this.rlineto(0, dy, _currentPoint);
-                            _currentPoint = line.Point;
-                            _pathFigure.Segments.Add(line);
+                            if (count % 2 == 0) // even number
+                            {
+                                double dxa = this._charStringStackCFF.ElementAt(--count);
+                                //double dyb = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(dxa, 0, _currentPoint);
+                                _currentPoint = line.Point;
+                                _pathFigure.Segments.Add(line);
+                            }
+                            else // odd number
+                            {
+                                double dy1 = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(0, dy1, _currentPoint);
+                                _currentPoint = line.Point;
+                                _pathFigure.Segments.Add(line);
+                            }
                         }
-                        else // odd number
+                    }
+                    else
+                    {
+                        while(count > 0)
                         {
-                            double dx = this._charStringStackCFF.ElementAt(n);
-                            // Line
-                            LineSegment line = this.rlineto(dx, 0, _currentPoint);
-                            _currentPoint = line.Point;
-                            _pathFigure.Segments.Add(line);
+                            if(count % 2 == 0)
+                            {
+                                double dya = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(0, dya, _currentPoint);
+                                _currentPoint = line.Point;
+                                _pathFigure.Segments.Add(line);
+                            }
+                            else
+                            {
+                                double dxb = this._charStringStackCFF.ElementAt(--count);
+                                // Line
+                                LineSegment line = this.rlineto(dxb, 0, _currentPoint);
+                                _currentPoint = line.Point;
+                                _pathFigure.Segments.Add(line);
+                            }
                         }
                     }
                     this._charStringStackCFF.Clear();
@@ -495,9 +548,9 @@ namespace CFFFont
                             dxc, dyc, _currentPoint);
                         _currentPoint = bezier.Point3;
                         _pathFigure.Segments.Add(bezier);
-                        this._charStringStackCFF.Clear();
+                       
                     }
-
+                    this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 21)
                 {
@@ -551,20 +604,22 @@ namespace CFFFont
                 {
                     // rlinecurve command
                     int count = this._charStringStackCFF.Count;
-                    for (int n = 0; n < count - 6;)
+                    while (count > 0)
                     {
-                        double dxa = this._charStringStackCFF.ElementAt(n++);
-                        double dya = this._charStringStackCFF.ElementAt(n++);
+                        double dxa = this._charStringStackCFF.ElementAt(--count);
+                        double dya = this._charStringStackCFF.ElementAt(--count);
                         LineSegment line = this.rlineto(dxa, dya, _currentPoint);
                         _currentPoint = line.Point;
                         _pathFigure.Segments.Add(line);
+                        if (count == 6)
+                            break;
                     }
-                    double dxb = this._charStringStackCFF.ElementAt(count - 6);
-                    double dyb = this._charStringStackCFF.ElementAt(count - 5);
-                    double dxc = this._charStringStackCFF.ElementAt(count - 4);
-                    double dyc = this._charStringStackCFF.ElementAt(count - 3);
-                    double dxd = this._charStringStackCFF.ElementAt(count - 2);
-                    double dyd = this._charStringStackCFF.ElementAt(count - 1);
+                    double dxb = this._charStringStackCFF.ElementAt(--count);
+                    double dyb = this._charStringStackCFF.ElementAt(--count);
+                    double dxc = this._charStringStackCFF.ElementAt(--count);
+                    double dyc = this._charStringStackCFF.ElementAt(--count);
+                    double dxd = this._charStringStackCFF.ElementAt(--count);
+                    double dyd = this._charStringStackCFF.ElementAt(--count);
                     // Bezier
                     BezierSegment bezier = this.rrcurveto(dxb, dyb, dxc, dyc,
                         dxd, dyd, _currentPoint);
@@ -578,15 +633,15 @@ namespace CFFFont
                     int count = this._charStringStackCFF.Count;
                     if (count % 2 != 0) // odd
                     {
-                        double dx1 = this._charStringStackCFF.ElementAt(0);
-                        for (int n = 1; n < count;)
+                        double dx1 = this._charStringStackCFF.ElementAt(--count);
+                        while (count > 0)
                         {
-                            double dya = this._charStringStackCFF.ElementAt(n++);
-                            double dxb = this._charStringStackCFF.ElementAt(n++);
-                            double dyb = this._charStringStackCFF.ElementAt(n++);
-                            double dyc = this._charStringStackCFF.ElementAt(n++);
+                            double dya = this._charStringStackCFF.ElementAt(--count);
+                            double dxb = this._charStringStackCFF.ElementAt(--count);
+                            double dyb = this._charStringStackCFF.ElementAt(--count);
+                            double dyc = this._charStringStackCFF.ElementAt(--count);
                             // Bezier
-                            if (n == 5)
+                            if (count % 2 == 0)
                             {
                                 BezierSegment bezier = this.rrcurveto(dx1, dya, dxb, dyb,
                                     0, dyc, _currentPoint);
@@ -610,15 +665,15 @@ namespace CFFFont
                     int count = this._charStringStackCFF.Count;
                     if (count % 2 != 0) // odd
                     {
-                        double dy1 = this._charStringStackCFF.ElementAt(0);
-                        for (int n = 1; n < count;)
+                        double dy1 = this._charStringStackCFF.ElementAt(--count);
+                        while (count > 0)
                         {
-                            double dxa = this._charStringStackCFF.ElementAt(n++);
-                            double dxb = this._charStringStackCFF.ElementAt(n++);
-                            double dyb = this._charStringStackCFF.ElementAt(n++);
-                            double dxc = this._charStringStackCFF.ElementAt(n++);
+                            double dxa = this._charStringStackCFF.ElementAt(--count);
+                            double dxb = this._charStringStackCFF.ElementAt(--count);
+                            double dyb = this._charStringStackCFF.ElementAt(--count);
+                            double dxc = this._charStringStackCFF.ElementAt(--count);
                             // Bezier
-                            if (n == 5)
+                            if (count % 2 == 0)
                             {
                                 BezierSegment bezier = this.rrcurveto(dxa, dy1, dxb, dyb,
                                     dxc, 0, _currentPoint);
@@ -639,28 +694,150 @@ namespace CFFFont
                 else if (charStringBtye == 30)
                 {
                     // vhcurveto command
-                    double dx3 = this._charStringStackCFF.Pop();
-                    double dy2 = this._charStringStackCFF.Pop();
-                    double dx2 = this._charStringStackCFF.Pop();
-                    double dy1 = this._charStringStackCFF.Pop();
-                    // Bezier
-                    BezierSegment bezier = this.rrcurveto(0, dy1, dx2, dy2,
-                        dx3, 0, _currentPoint);
-                    _currentPoint = bezier.Point3;
-                    _pathFigure.Segments.Add(bezier);
+                    int count = this._charStringStackCFF.Count;
+                    if (count % 2 != 0) // odd
+                    {
+                        while (count > 0)
+                        {
+                            if (count % 2 != 0)
+                            {
+                                double dya = this._charStringStackCFF.ElementAt(--count);
+                                double dxb = this._charStringStackCFF.ElementAt(--count);
+                                double dyb = this._charStringStackCFF.ElementAt(--count);
+                                double dxc = this._charStringStackCFF.ElementAt(--count);
+                                double dyf = 0.0;
+                                --count;
+                                if(count == 0)
+                                    dyf = this._charStringStackCFF.ElementAt(count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(0, dya, dxb, dyb,
+                                    dxc, dyf, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                            else
+                            {
+                                double dxd = this._charStringStackCFF.ElementAt(count);
+                                double dxe = this._charStringStackCFF.ElementAt(--count);
+                                double dye = this._charStringStackCFF.ElementAt(--count);
+                                double dyf = this._charStringStackCFF.ElementAt(--count);
+                                double dxf = 0.0;
+                                if (count == 1)
+                                    dxf = this._charStringStackCFF.ElementAt(--count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(dxd, 0, dxe, dye,
+                                    dxf, dyf, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                        }
+                    }
+                    else // even
+                    {
+                        while (count > 0)
+                        {
+                            if (count % 2 == 0)
+                            {
+                                double dya = this._charStringStackCFF.ElementAt(--count);
+                                double dxb = this._charStringStackCFF.ElementAt(--count);
+                                double dyb = this._charStringStackCFF.ElementAt(--count);
+                                double dxc = this._charStringStackCFF.ElementAt(--count);
+                                --count;
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(0, dya, dxb, dyb,
+                                    dxc, 0, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                            else
+                            {
+                                double dxd = this._charStringStackCFF.ElementAt(count);
+                                double dxe = this._charStringStackCFF.ElementAt(--count);
+                                double dye = this._charStringStackCFF.ElementAt(--count);
+                                double dyf = this._charStringStackCFF.ElementAt(--count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(dxd, 0, dxe, dye,
+                                    0, dyf, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                        }
+                    }
+                    this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 31)
                 {
                     // hvcurveto command
-                    double dy3 = this._charStringStackCFF.Pop();
-                    double dy2 = this._charStringStackCFF.Pop();
-                    double dx2 = this._charStringStackCFF.Pop();
-                    double dx1 = this._charStringStackCFF.Pop();
-                    // Bezier
-                    BezierSegment bezier = this.rrcurveto(dx1, 0, dx2, dy2,
-                        0, dy3, _currentPoint);
-                    _currentPoint = bezier.Point3;
-                    _pathFigure.Segments.Add(bezier);
+                    int count = this._charStringStackCFF.Count;
+                    if (count % 2 != 0) // odd
+                    {
+                        while (count > 0)
+                        {
+                            if (count % 2 != 0)
+                            {
+                                double dxa = this._charStringStackCFF.ElementAt(--count);
+                                double dxb = this._charStringStackCFF.ElementAt(--count);
+                                double dyb = this._charStringStackCFF.ElementAt(--count);
+                                double dyc = this._charStringStackCFF.ElementAt(--count);
+                                double dxf = 0.0;
+                                --count;
+                                if (count == 0)
+                                    dxf = this._charStringStackCFF.ElementAt(count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(dxa, 0, dxb, dyb,
+                                    dxf, dyc, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                            else
+                            {
+                                double dyd = this._charStringStackCFF.ElementAt(count);
+                                double dxe = this._charStringStackCFF.ElementAt(--count);
+                                double dye = this._charStringStackCFF.ElementAt(--count);
+                                double dxf = this._charStringStackCFF.ElementAt(--count);
+                                double dyf = 0.0;
+                                if (count == 1)
+                                    dyf = this._charStringStackCFF.ElementAt(--count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(0, dyd, dxe, dye,
+                                    dxf, dyf, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                        }
+                    }
+                    else // even
+                    {
+                        while (count > 0)
+                        {
+                            if (count % 2 == 0)
+                            {
+                                double dxa = this._charStringStackCFF.ElementAt(--count);
+                                double dxb = this._charStringStackCFF.ElementAt(--count);
+                                double dyb = this._charStringStackCFF.ElementAt(--count);
+                                double dyc = this._charStringStackCFF.ElementAt(--count);
+                                --count;
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(dxa, 0, dxb, dyb,
+                                    0, dyc, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                            else
+                            {
+                                double dyd = this._charStringStackCFF.ElementAt(count);
+                                double dxe = this._charStringStackCFF.ElementAt(--count);
+                                double dye = this._charStringStackCFF.ElementAt(--count);
+                                double dxf = this._charStringStackCFF.ElementAt(--count);
+                                // Bezier
+                                BezierSegment bezier = this.rrcurveto(0, dyd, dxe, dye,
+                                    dxf, 0, _currentPoint);
+                                _currentPoint = bezier.Point3;
+                                _pathFigure.Segments.Add(bezier);
+                            }
+                        }
+                    }
+                    this._charStringStackCFF.Clear();
                 }
                 #endregion
                 #region hint operators
@@ -687,6 +864,7 @@ namespace CFFFont
                 else if (charStringBtye == 19)
                 {
                     // hintmask command 
+                    byte mask = data[++i];
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 20)

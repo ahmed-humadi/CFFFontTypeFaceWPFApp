@@ -37,13 +37,34 @@ namespace CFFFontTypeFaceWPF
                 using (CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
 
                 {
-                    Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(2);
+                    //Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(84);
 
-                    glyph.Transform = new ScaleTransform(40.0 / 1000.0, 40.0 / 1000.0);
-                    //glyph.Transform = new TranslateTransform(50, 50);
-                    using (DrawingContext dc = CustPanel.RenderOpen())
+                    //glyph.Transform = new ScaleTransform(150 / 1000.0, 150 / 1000.0);
+                    //glyph.Transform = new TranslateTransform(20, 20);
+                    //using (DrawingContext dc = CustPanel.RenderOpen())
+                    //{
+                    //    dc.PushTransform(new TranslateTransform(350, 100));
+                    //    dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 2), glyph);
+                    //    dc.Pop();
+                    //}
+                    double x = 0; double y =  CustPanel.ActualHeight - 30;
+                    for (ushort i = 0; i < 85; i++)
                     {
-                        dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 2), glyph);
+                        Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(i);
+                        glyph.Transform = new ScaleTransform(20.0 / 1000.0, 20.0 / 1000.0);
+                        x = x + 20;
+
+                        if (x > 650)
+                        { y -= 30; x = 20; }
+
+                        //glyph.Transform = new TranslateTransform(x, y);
+                       // glyph.Transform = new ScaleTransform(20 / 1000.0, 40.0 / 1000.0);
+                        using (DrawingContext dc = CustPanel.RenderOpen())
+                        {
+                            dc.PushTransform(new TranslateTransform(x, y));
+                            dc.DrawGeometry(Brushes.Black, null, glyph);
+                            dc.Pop();
+                        }
                     }
                 }
             }
