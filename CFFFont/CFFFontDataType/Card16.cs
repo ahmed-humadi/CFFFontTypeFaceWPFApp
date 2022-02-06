@@ -20,6 +20,10 @@ namespace CFFFont.CFFDataType
         {
             return new Card16((ushort)i.value);
         }
+        public static explicit operator ushort(Card16 card16)
+        {
+            return card16._value;
+        }
         public static int operator +(Card16 value1 , int value2)
         {
             return (value1.value + value2);

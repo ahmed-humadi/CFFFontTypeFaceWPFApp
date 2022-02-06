@@ -13,6 +13,14 @@ namespace CFFFont
     public class CFFFontTypeFace : IDisposable
     {
         private CFFReader _cFFReader;
+        private ushort _numberOfGlyphs;
+
+        public ushort NumberOfGlyphs
+        {
+            get { return _numberOfGlyphs; }
+            set { _numberOfGlyphs = value; }
+        }
+
         public CFFFontTypeFace(byte[] fontData) 
         { 
             this._cFFReader = new CFFReader(fontData);
@@ -67,6 +75,7 @@ namespace CFFFont
             // CharStrings
             this._cFFReader.Seek((long)this._topDicCFF["CharStrings"]);
             Card16 count3 = this._cFFReader.ReadCard16();
+            this._numberOfGlyphs = (ushort)count3;
             OffSize offSize3 = this._cFFReader.ReadOffSize();
             Offset16[] offSetsArray3 = new Offset16[count3 + 1];
             for (int i = 0; i < offSetsArray3.Length; i++)
@@ -371,7 +380,7 @@ namespace CFFFont
             int i = 0;
             for (; i < data.Length; i++)
             {
-                #region Decode numbers
+                #region Decode numbers between 32 and 255
                 byte charStringBtye = data[i];
                 // number decoded
                 if (charStringBtye >= 32 && charStringBtye <= 246) // [-107,107]
@@ -398,6 +407,17 @@ namespace CFFFont
                     byte b3 = data[++i];
                     byte b4 = data[++i];
                     integer = ((((((b1 << 8) + b2) << 8) + b3) << 8) + b4) / (1 << 16);
+                    this._charStringStackCFF.Push(integer);
+                }
+                #endregion
+                #region shortInt 28
+                // Note 2: in addition to range 32 to 255 there is 28 followed by two bytes
+                // represent numbers [-32768, 32767]
+                else if (charStringBtye == 28)
+                {
+                    byte b1 = data[++i];
+                    byte b2 = data[++i];
+                    integer = BitConverter.ToInt16(new byte[] {b2,b1 });
                     this._charStringStackCFF.Push(integer);
                 }
                 #endregion
@@ -552,48 +572,86 @@ namespace CFFFont
                     }
                     this._charStringStackCFF.Clear();
                 }
+                else if (charStringBtye == 0 || charStringBtye == 2 || 
+                    charStringBtye == 9 || charStringBtye == 13 ||
+                    charStringBtye == 15 ||
+                    charStringBtye == 16 || charStringBtye == 17)
+                {
+                    // reserved
+
+                }
                 else if (charStringBtye == 21)
                 {
                     // rmoveto command
-                    double dy = this._charStringStackCFF.Pop();
-                    double dx = this._charStringStackCFF.Pop();
-                    // startpoint
-                    _pathFigure = new PathFigure();
-                    _pathGeometry.Figures.Add(_pathFigure);
-                    _pathFigure.StartPoint = this.rmoveto(dx, dy, _currentPoint);
-                    _currentPoint = _pathFigure.StartPoint;
+                    int count = this._charStringStackCFF.Count;
+                    if (count > 2)
+                    {
+                        double dy = this._charStringStackCFF.Pop();
+                        double dx = this._charStringStackCFF.Pop();
+                        double glyfWidth = this._charStringStackCFF.Pop();
+                        // startpoint
+                        _pathFigure = new PathFigure();
+                        _pathGeometry.Figures.Add(_pathFigure);
+                        _pathFigure.StartPoint = this.rmoveto(dx, dy, _currentPoint);
+                        _currentPoint = _pathFigure.StartPoint;
+                    }
+                    else
+                    {
+                        double dy = this._charStringStackCFF.Pop();
+                        double dx = this._charStringStackCFF.Pop();
+                        // startpoint
+                        _pathFigure = new PathFigure();
+                        _pathGeometry.Figures.Add(_pathFigure);
+                        _pathFigure.StartPoint = this.rmoveto(dx, dy, _currentPoint);
+                        _currentPoint = _pathFigure.StartPoint;
+                    }
                 }
                 else if (charStringBtye == 22)
                 {
                     // hmoveto command
-                    double dx = this._charStringStackCFF.Pop();
-                    // startpoint
-                    _pathFigure = new PathFigure();
-                    _pathGeometry.Figures.Add(_pathFigure);
-                    _pathFigure.StartPoint = this.rmoveto(dx, 0, _currentPoint);
-                    _currentPoint = _pathFigure.StartPoint;
+                    int count = this._charStringStackCFF.Count;
+                    if (count > 1)
+                    {
+                        double dx = this._charStringStackCFF.Pop();
+                        double glyfWidth = this._charStringStackCFF.Pop();
+                        // startpoint
+                        _pathFigure = new PathFigure();
+                        _pathGeometry.Figures.Add(_pathFigure);
+                        _pathFigure.StartPoint = this.rmoveto(dx, 0, _currentPoint);
+                        _currentPoint = _pathFigure.StartPoint;
+                    }
+                    else
+                    {
+                        double dx = this._charStringStackCFF.Pop();
+                        // startpoint
+                        _pathFigure = new PathFigure();
+                        _pathGeometry.Figures.Add(_pathFigure);
+                        _pathFigure.StartPoint = this.rmoveto(dx, 0, _currentPoint);
+                        _currentPoint = _pathFigure.StartPoint;
+                    }
                 }
                 else if (charStringBtye == 24)
                 {
                     // rcurveline command
                     int count = this._charStringStackCFF.Count;
-                    int n = count - 1;
-                    while (n > 1)
+                    while (count > 0)
                     {
-                        double dxa = this._charStringStackCFF.ElementAt(n--);
-                        double dya = this._charStringStackCFF.ElementAt(n--);
-                        double dxb = this._charStringStackCFF.ElementAt(n--);
-                        double dyb = this._charStringStackCFF.ElementAt(n--);
-                        double dxc = this._charStringStackCFF.ElementAt(n--);
-                        double dyc = this._charStringStackCFF.ElementAt(n--);
+                        double dxa = this._charStringStackCFF.ElementAt(--count);
+                        double dya = this._charStringStackCFF.ElementAt(--count);
+                        double dxb = this._charStringStackCFF.ElementAt(--count);
+                        double dyb = this._charStringStackCFF.ElementAt(--count);
+                        double dxc = this._charStringStackCFF.ElementAt(--count);
+                        double dyc = this._charStringStackCFF.ElementAt(--count);
                         // Bezier
                         BezierSegment bezier = this.rrcurveto(dxa, dya, dxb, dyb,
                             dxc, dyc, _currentPoint);
                         _currentPoint = bezier.Point3;
                         _pathFigure.Segments.Add(bezier);
+                        if (count == 2)
+                            break;
                     }
-                    double dx = this._charStringStackCFF.ElementAt(n--);
-                    double dy = this._charStringStackCFF.ElementAt(n);
+                    double dx = this._charStringStackCFF.ElementAt(--count);
+                    double dy = this._charStringStackCFF.ElementAt(--count);
                     // Line
                     LineSegment line = this.rlineto(dx, dy, _currentPoint);
                     this._currentPoint = line.Point;
@@ -688,8 +746,24 @@ namespace CFFFont
                                 _pathFigure.Segments.Add(bezier);
                             }
                         }
-                        this._charStringStackCFF.Clear();
                     }
+                    else
+                    {
+                        while (count > 0)
+                        {
+                            double dxa = this._charStringStackCFF.ElementAt(--count);
+                            double dxb = this._charStringStackCFF.ElementAt(--count);
+                            double dyb = this._charStringStackCFF.ElementAt(--count);
+                            double dxc = this._charStringStackCFF.ElementAt(--count);
+                            // Bezier
+                            BezierSegment bezier = this.rrcurveto(dxa, 0, dxb, dyb,
+                                dxc, 0, _currentPoint);
+                            _currentPoint = bezier.Point3;
+                            _pathFigure.Segments.Add(bezier);
+
+                        }
+                    }
+                    this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 30)
                 {
@@ -864,7 +938,16 @@ namespace CFFFont
                 else if (charStringBtye == 19)
                 {
                     // hintmask command 
-                    byte mask = data[++i];
+                    //int count = this._charStringStackCFF.Count;
+                    //if (count > 8)
+                    //{
+                    //    byte mask1 = data[++i];
+                    //    byte mask2 = data[++i];
+                    //}
+                    //else
+                    {
+                        byte mask1 = data[++i];
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 20)
@@ -873,11 +956,6 @@ namespace CFFFont
                     this._charStringStackCFF.Clear();
                 }
                 #endregion
-                else if (charStringBtye == 9)
-                {
-                    // closepath command
-                    _pathFigure.IsClosed = true;
-                }
                 #region callsubr
                 else if (charStringBtye == 10)
                 {
@@ -923,7 +1001,7 @@ namespace CFFFont
                     byte next = data[++i];
                     if (next == 0)
                     {
-                        // dotsection command
+                        // dotsection is deprecated in CFF2
                     }
                     else if (next == 1)
                     {

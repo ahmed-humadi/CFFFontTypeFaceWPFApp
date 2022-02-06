@@ -26,48 +26,61 @@ namespace CFFFontTypeFaceWPF
         {
             InitializeComponent();
             CustPanel.LayoutTransform = new ScaleTransform(1, -1);
-            DrawGlyph();
+            
         }
         private void DrawGlyph()
         {
-            using(FileStream stream = new FileStream(@"F:\EGEDFC+MyriadMM_565_600_.cff", FileMode.Open))
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
             {
-                byte[] fontData = new byte[stream.Length];
-                stream.Read(fontData);
-                using (CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
-
+                using (FileStream stream = new FileStream(openFileDialog.FileName, FileMode.Open))
                 {
-                    //Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(84);
-
-                    //glyph.Transform = new ScaleTransform(150 / 1000.0, 150 / 1000.0);
-                    //glyph.Transform = new TranslateTransform(20, 20);
-                    //using (DrawingContext dc = CustPanel.RenderOpen())
-                    //{
-                    //    dc.PushTransform(new TranslateTransform(350, 100));
-                    //    dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 2), glyph);
-                    //    dc.Pop();
-                    //}
-                    double x = 0; double y =  CustPanel.ActualHeight - 30;
-                    for (ushort i = 0; i < 85; i++)
+                    CustPanel.ClearVisuals();
+                    byte[] fontData = new byte[stream.Length];
+                    stream.Read(fontData);
+                    using (CFFFontTypeFace cFFFontTypeFace = new CFFFontTypeFace(fontData))
                     {
-                        Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(i);
-                        glyph.Transform = new ScaleTransform(20.0 / 1000.0, 20.0 / 1000.0);
-                        x = x + 20;
+                        //Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(11);
 
-                        if (x > 650)
-                        { y -= 30; x = 20; }
-
-                        //glyph.Transform = new TranslateTransform(x, y);
-                       // glyph.Transform = new ScaleTransform(20 / 1000.0, 40.0 / 1000.0);
-                        using (DrawingContext dc = CustPanel.RenderOpen())
+                        //glyph.Transform = new ScaleTransform(100 / 1000.0, 100 / 1000.0);
+                        //using (DrawingContext dc = CustPanel.RenderOpen())
+                        //{
+                        //    dc.PushTransform(new TranslateTransform(350, 100));
+                        //    dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 2), glyph);
+                        //    dc.Pop();
+                        //}
+                        double x = 0; double y = 0;//CustPanel.ActualHeight - 30;
+                        for (ushort i = 0; i < cFFFontTypeFace.NumberOfGlyphs; i++)
                         {
-                            dc.PushTransform(new TranslateTransform(x, y));
-                            dc.DrawGeometry(Brushes.Black, null, glyph);
-                            dc.Pop();
+                            if (i == 20)
+                            {
+
+                            }
+                            Geometry glyph = cFFFontTypeFace.GetGlyphOutLine(i);
+                            
+                            glyph.Transform = new ScaleTransform(20.0 / 1000.0, 20.0 / 1000.0);
+                            x = x + 20;
+
+                            if (x > 650)
+                            { y -= 30; x = 20; }
+
+                            //glyph.Transform = new TranslateTransform(x, y);
+                            // glyph.Transform = new ScaleTransform(20 / 1000.0, 40.0 / 1000.0);
+                            using (DrawingContext dc = CustPanel.RenderOpen())
+                            {
+                                dc.PushTransform(new TranslateTransform(x, y));
+                                dc.DrawGeometry(Brushes.Black, null, glyph);
+                                dc.Pop();
+                            }
                         }
                     }
                 }
             }
+        }
+
+        private void LoadFile_Click(object sender, RoutedEventArgs e)
+        {
+            DrawGlyph();
         }
     }
 }

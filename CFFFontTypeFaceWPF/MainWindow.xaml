@@ -6,8 +6,14 @@
         xmlns:CustPanel="clr-namespace:CFFFont.CustomFontViewer;assembly=CFFFont"
         xmlns:local="clr-namespace:CFFFontTypeFaceWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="500" Width="800">
     <Grid>
+        <Button x:Name="LoadFile" Content="Load CFF File"
+                Width="150" Height="25" HorizontalAlignment="Left"
+                VerticalAlignment="Top" Margin="5"
+                Click="LoadFile_Click">
+            
+        </Button>
         <CustPanel:CustomPanel x:Name="CustPanel" Height="400" Width="700">
             
         </CustPanel:CustomPanel>
