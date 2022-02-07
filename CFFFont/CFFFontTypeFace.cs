@@ -376,6 +376,11 @@ namespace CFFFont
             _charStringStackCFF.Clear();
             _pathGeometry = new PathGeometry();
             double integer = 0;
+            int hstemhmCount = 0; bool hintmask = true; int hintmaskCount = 0;
+            int vstemhmCount = 0;
+            bool ctrmask = true; int ctrmaskCount = 0;
+            int hsemCount = 0;
+            int vsemCount = 0;
             // decode glyfdescription
             int i = 0;
             for (; i < data.Length; i++)
@@ -383,6 +388,7 @@ namespace CFFFont
                 #region Decode numbers between 32 and 255
                 byte charStringBtye = data[i];
                 // number decoded
+                //return _pathGeometry;
                 if (charStringBtye >= 32 && charStringBtye <= 246) // [-107,107]
                 {
                     integer = charStringBtye - 139;
@@ -417,7 +423,7 @@ namespace CFFFont
                 {
                     byte b1 = data[++i];
                     byte b2 = data[++i];
-                    integer = BitConverter.ToInt16(new byte[] {b2,b1 });
+                    integer = BitConverter.ToInt16(new byte[] { b2, b1 });
                     this._charStringStackCFF.Push(integer);
                 }
                 #endregion
@@ -476,9 +482,9 @@ namespace CFFFont
                     }
                     else
                     {
-                        while(count > 0)
+                        while (count > 0)
                         {
-                            if(count % 2 == 0)
+                            if (count % 2 == 0)
                             {
                                 double dxa = this._charStringStackCFF.ElementAt(--count);
                                 // Line
@@ -527,9 +533,9 @@ namespace CFFFont
                     }
                     else
                     {
-                        while(count > 0)
+                        while (count > 0)
                         {
-                            if(count % 2 == 0)
+                            if (count % 2 == 0)
                             {
                                 double dya = this._charStringStackCFF.ElementAt(--count);
                                 // Line
@@ -554,7 +560,7 @@ namespace CFFFont
                     // rrcurveto command
                     int count = this._charStringStackCFF.Count;
                     int n = count - 1;
-                    while(n > 0)
+                    while (n > 0)
                     {
                         double dxa = this._charStringStackCFF.ElementAt(n--);
                         double dya = this._charStringStackCFF.ElementAt(n--);
@@ -568,11 +574,11 @@ namespace CFFFont
                             dxc, dyc, _currentPoint);
                         _currentPoint = bezier.Point3;
                         _pathFigure.Segments.Add(bezier);
-                       
+
                     }
                     this._charStringStackCFF.Clear();
                 }
-                else if (charStringBtye == 0 || charStringBtye == 2 || 
+                else if (charStringBtye == 0 || charStringBtye == 2 ||
                     charStringBtye == 9 || charStringBtye == 13 ||
                     charStringBtye == 15 ||
                     charStringBtye == 16 || charStringBtye == 17)
@@ -714,8 +720,24 @@ namespace CFFFont
                                 _pathFigure.Segments.Add(bezier);
                             }
                         }
-                        this._charStringStackCFF.Clear();
                     }
+                    else
+                    {
+                        while(count > 0)
+                        {
+                            double dya = this._charStringStackCFF.ElementAt(--count);
+                            double dxb = this._charStringStackCFF.ElementAt(--count);
+                            double dyb = this._charStringStackCFF.ElementAt(--count);
+                            double dyc = this._charStringStackCFF.ElementAt(--count);
+                            // Bezier
+                            BezierSegment bezier = this.rrcurveto(0, dya, dxb, dyb,
+                                0, dyc, _currentPoint);
+                            _currentPoint = bezier.Point3;
+                            _pathFigure.Segments.Add(bezier);
+
+                        }
+                    }
+                    this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 27)
                 {
@@ -781,7 +803,7 @@ namespace CFFFont
                                 double dxc = this._charStringStackCFF.ElementAt(--count);
                                 double dyf = 0.0;
                                 --count;
-                                if(count == 0)
+                                if (count == 0)
                                     dyf = this._charStringStackCFF.ElementAt(count);
                                 // Bezier
                                 BezierSegment bezier = this.rrcurveto(0, dya, dxb, dyb,
@@ -918,33 +940,78 @@ namespace CFFFont
                 else if (charStringBtye == 1)
                 {
                     // hstem command
+                    int count = this._charStringStackCFF.Count;
+                    if(count % 2 == 0) // even
+                    {
+                        hsemCount = this._charStringStackCFF.Count;
+                    }
+                    else // odd
+                    {
+                        // this first number is width
+                        hsemCount = this._charStringStackCFF.Count - 1;
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 3)
                 {
                     // vstem command 
+                    int count = this._charStringStackCFF.Count;
+                    if (count % 2 == 0) // even
+                    {
+                        vsemCount = this._charStringStackCFF.Count;
+                    }
+                    else // odd
+                    {
+                        // this first number is width
+                        vsemCount = this._charStringStackCFF.Count - 1;
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 18)
                 {
-                    // hstemhm command 
+                    // hstemhm command
+                    int count = this._charStringStackCFF.Count;
+                    if (count % 2 == 0) // even
+                    {
+                        hstemhmCount = this._charStringStackCFF.Count;
+                    }
+                    else // odd
+                    {
+                        // this first number is width
+                        hstemhmCount = this._charStringStackCFF.Count - 1;
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 23)
                 {
-                    // vstemhm command 
+                    // vstemhm command
+                    int count = this._charStringStackCFF.Count;
+                    if (count % 2 == 0) // even
+                    {
+                        vstemhmCount = this._charStringStackCFF.Count;
+                    }
+                    else // odd
+                    {
+                        // this first number is width
+                        vstemhmCount = this._charStringStackCFF.Count - 1;
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 else if (charStringBtye == 19)
                 {
-                    // hintmask command 
-                    //int count = this._charStringStackCFF.Count;
-                    //if (count > 8)
-                    //{
-                    //    byte mask1 = data[++i];
-                    //    byte mask2 = data[++i];
-                    //}
-                    //else
+                    // hintmask operator 
+                    if(hintmask)
+                    {
+                        hintmaskCount = this._charStringStackCFF.Count;
+                        hintmask = false;
+                    }
+                    if (((hstemhmCount / 2) + hintmaskCount / 2) > 8 || (hsemCount / 2) + hintmaskCount / 2 > 8 || (vsemCount / 2) + hintmaskCount / 2 > 8 
+                        || (vstemhmCount / 2) + hintmaskCount / 2 > 8)
+                    {
+                        byte mask1 = data[++i];
+                        byte mask2 = data[++i];
+                    }
+                    else
                     {
                         byte mask1 = data[++i];
                     }
@@ -952,7 +1019,22 @@ namespace CFFFont
                 }
                 else if (charStringBtye == 20)
                 {
-                    // cntrmask command 
+                    // cntrmask operator 
+                    if (ctrmask)
+                    {
+                        ctrmaskCount = this._charStringStackCFF.Count;
+                        ctrmask = false;
+                    }
+                    if (((hstemhmCount / 2) + hintmaskCount / 2) > 8 || (hsemCount / 2) + hintmaskCount / 2 > 8 || (vsemCount / 2) + hintmaskCount / 2 > 8
+                       || (vstemhmCount / 2) + hintmaskCount / 2 > 8)
+                    {
+                        byte mask1 = data[++i];
+                        byte mask2 = data[++i];
+                    }
+                    else
+                    {
+                        byte mask1 = data[++i];
+                    }
                     this._charStringStackCFF.Clear();
                 }
                 #endregion
