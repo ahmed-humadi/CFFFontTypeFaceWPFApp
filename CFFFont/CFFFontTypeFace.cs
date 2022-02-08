@@ -94,11 +94,69 @@ namespace CFFFont
                 }
                 this._glyphsOutlineDic.Add(i, dataArray);
             }
-            //GetGlyphOutLineCFF2(2);
+            // Char Encoding 
+            if (this._topDicCFF.ContainsKey("Encoding"))
+            {
+                this._cFFReader.Seek((long)this._topDicCFF["Encoding"]);
+                Card8 encodingFormat = this._cFFReader.ReadCard8();
+                if (encodingFormat == 0)
+                {
+                    ushort gID = 0;
+                    Card8 nCodes = this._cFFReader.ReadCard8();
+                    Card8[] data = new Card8[(int)nCodes];
+                    for (Card8 i = (Card8)0; i < nCodes; i++)
+                    {
+                        data[(int)i] = this._cFFReader.ReadCard8();
+                    }
+                    foreach(Card8 code in data)
+                    {
+                        this._encoding.Add(++gID, (ushort)code);
+                    }
+                }
+                else if (encodingFormat == 1)
+                {
+                    ushort gID = 0;
+                    Card8 nRanges = this._cFFReader.ReadCard8();
+                    {
+                        for (Card8 i = (Card8)0; i < nRanges; i++)
+                        {
+                            Card8 first = this._cFFReader.ReadCard8();
+                            Card8 nLeft = this._cFFReader.ReadCard8();
+
+                            // range
+                            for(int j = (int)first; j <= (first + nLeft); j++)
+                            {
+                                // In encoding and charset always gID starts at 1
+                                // since gID = 0 is always .notdef
+                                this._encoding.Add(++gID, (ushort)j);
+                            }
+                        }
+                    }
+                }
+                if (this._topDicCFF.ContainsKey("Charset"))
+                {
+                    this._cFFReader.Seek((long)this._topDicCFF["Charset"]);
+                    Card8 format = this._cFFReader.ReadCard8();
+                    if (format == 0)
+                    {
+
+                    }
+                    else if (format == 1)
+                    {
+                        for (int i = 0; i < NumberOfGlyphs - 1; i++)
+                        {
+                            Card16 sID = this._cFFReader.ReadCard16();
+                            Card8 nLeft = this._cFFReader.ReadCard8();
+                        }
+                    }
+                }
+            }
         }
         private Dictionary<string, double> _topDicCFF = new Dictionary<string, double>();
         private Dictionary<string, double> _privateDicCFF = new Dictionary<string, double>();
         private Dictionary<ushort, byte[]> _glyphsOutlineDic = new Dictionary<ushort, byte[]>();
+        // this maps char code to glyph's name
+        private Dictionary<ushort, ushort> _encoding = new Dictionary<ushort, ushort>();
         private Stack<double> _charStringStackCFF = new Stack<double>();
         private void DecodeTopDic(byte b0, ref int j)
         {
@@ -246,12 +304,14 @@ namespace CFFFont
                 // operator : charset, operand : number
                 else if (b0 == 15)
                 {
-                    this._charStringStackCFF.Pop();
+                    var offset = this._charStringStackCFF.Pop();
+                    this._topDicCFF.Add("Charset", offset);
                 }
                 // operator : encoding, operand : number
                 else if (b0 == 16)
                 {
-                    this._charStringStackCFF.Pop();
+                   var offset = this._charStringStackCFF.Pop();
+                    this._topDicCFF.Add("Encoding", offset);
                 }
                 // operator : charStrings, operand : number
                 else if (b0 == 17)
@@ -1176,8 +1236,6 @@ namespace CFFFont
             { this._glyphsOutlineDic.Clear(); this._glyphsOutlineDic = null; }
             if (this._charStringStackCFF is not null)
             { this._charStringStackCFF.Clear(); this._charStringStackCFF = null; }
-            //if (this._pathGeometry is not null)
-            //{ this._pathGeometry.Clear(); this._pathGeometry = null; }
             if (this._pathFigure is not null)
             {this._pathFigure = null; }
         }
