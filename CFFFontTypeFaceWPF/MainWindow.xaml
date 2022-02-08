@@ -14,7 +14,8 @@
                 Click="LoadFile_Click">
             
         </Button>
-        <CustPanel:CustomPanel x:Name="CustPanel" Height="400" Width="700">
+        <CustPanel:CustomPanel x:Name="CustPanel" Height="400" Width="700"
+                               Background="GhostWhite">
             
         </CustPanel:CustomPanel>
     </Grid>

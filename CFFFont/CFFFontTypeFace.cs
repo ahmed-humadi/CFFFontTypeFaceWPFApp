@@ -346,28 +346,6 @@ namespace CFFFont
         }
         private byte[] GetGlyphDescription(ushort gID)
         {
-            //long charStringsOffset = (long)this._topDicCFF["CharStrings"];
-            //this._cFFReader.Seek(charStringsOffset);
-            //// header 
-            //Card16 count3 = this._cFFReader.ReadCard16();
-            //OffSize offSize3 = this._cFFReader.ReadOffSize();
-            //// selected glyf position offset
-            //long glypfOffset = gID + charStringsOffset;
-            //this._cFFReader.Seek(glypfOffset);
-            //Offset16 offset0 = this._cFFReader.ReadOffset16();
-            //// preceeding glyf offset
-            //long nextGlypfOffset = gID + 1 + charStringsOffset;
-            //this._cFFReader.Seek(nextGlypfOffset);
-            //Offset16 offset1 = this._cFFReader.ReadOffset16();
-            //// fill glyf array
-            //byte[] dataArray = null;
-            //ushort length = (ushort)(offset1 - offset0);
-            //dataArray = new byte[length];
-            //for (int j = 0; j < length; j++)    
-            //{
-            //    Card8 data = this._cFFReader.ReadCard8();
-            //    dataArray[j] = (byte)data;
-            //}
             return _glyphsOutlineDic[gID];
         }
         public Geometry GetGlyphOutLine(ushort gID)
